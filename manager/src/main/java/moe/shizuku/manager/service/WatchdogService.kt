@@ -190,10 +190,6 @@ class WatchdogService : Service() {
             }
         }
     }
-                }
-            }
-        }
-    }
 
     private fun stopErrorProtectLoop() {
         errorProtectJob?.cancel()
