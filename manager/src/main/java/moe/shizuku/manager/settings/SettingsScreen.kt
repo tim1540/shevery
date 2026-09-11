@@ -914,10 +914,10 @@ fun SettingsScreen() {
             choices = modelOptions.map {
                 ChoiceOption(
                     title = it,
-                    summary = if (it.contains("lite", ignoreCase = true) || it.contains("8b", ignoreCase = true)) {
-                        stringResource(R.string.comput_gemini_model_lightweight)
-                    } else {
-                        stringResource(R.string.comput_gemini_model_performance)
+                    summary = when {
+                        it == "gemini-flash-latest" -> stringResource(R.string.comput_gemini_model_performance) + " (Auto-Latest)"
+                        it.contains("lite", ignoreCase = true) || it.contains("8b", ignoreCase = true) -> stringResource(R.string.comput_gemini_model_lightweight)
+                        else -> stringResource(R.string.comput_gemini_model_performance)
                     },
                     icon = R.drawable.ic_outline_info_24
                 )

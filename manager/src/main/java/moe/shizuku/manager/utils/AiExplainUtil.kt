@@ -168,7 +168,7 @@ object AiExplainUtil {
                     }
                 }
 
-                flashModels.distinct().sortedWith { a, b ->
+                val sorted = flashModels.filter { it != "gemini-flash-latest" }.distinct().sortedWith { a, b ->
                     val vA = Regex("""gemini-(\d+(?:\.\d+)?)""").find(a)?.groupValues?.get(1)?.toDoubleOrNull() ?: 0.0
                     val vB = Regex("""gemini-(\d+(?:\.\d+)?)""").find(b)?.groupValues?.get(1)?.toDoubleOrNull() ?: 0.0
                     val cmp = vB.compareTo(vA)
@@ -179,6 +179,7 @@ object AiExplainUtil {
                         if (liteCmp != 0) liteCmp else a.compareTo(b)
                     }
                 }
+                listOf("gemini-flash-latest") + sorted
             } else {
                 emptyList()
             }
