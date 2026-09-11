@@ -280,6 +280,8 @@ object ModuleSettings {
     private const val KEY_COMPUT_RECOMMAND = "comput_recommand"
     private const val KEY_COMPUT_AI_EXPLAIN = "comput_ai_explain"
     private const val KEY_COMPUT_GEMINI_MODEL = "comput_gemini_model"
+    private const val KEY_COMPUT_GEMINI_MODELS_CACHE = "comput_gemini_models_cache"
+    val DEFAULT_GEMINI_MODELS = listOf("gemini-3.6-flash", "gemini-3.5-flash-lite")
 
     private const val PROVIDER = "AndroidKeyStore"
     private const val ALIAS = "SheveryGeminiKey"
@@ -362,6 +364,32 @@ object ModuleSettings {
 
     fun setComputGeminiModel(value: String) {
         ShizukuSettings.getPreferences().edit().putString(KEY_COMPUT_GEMINI_MODEL, value).apply()
+    }
+
+    fun getCachedGeminiModels(): List<String> {
+        val cached = ShizukuSettings.getPreferences().getStringSet(KEY_COMPUT_GEMINI_MODELS_CACHE, null)
+        if (!cached.isNullOrEmpty()) {
+            return cached.toList().sortedWith { a, b ->
+                val vA = Regex("""gemini-(\d+(?:\.\d+)?)""").find(a)?.groupValues?.get(1)?.toDoubleOrNull() ?: 0.0
+                val vB = Regex("""gemini-(\d+(?:\.\d+)?)""").find(b)?.groupValues?.get(1)?.toDoubleOrNull() ?: 0.0
+                val cmp = vB.compareTo(vA)
+                if (cmp != 0) cmp else {
+                    val aIsLite = if (a.contains("lite", ignoreCase = true) || a.contains("8b", ignoreCase = true)) 1 else 0
+                    val bIsLite = if (b.contains("lite", ignoreCase = true) || b.contains("8b", ignoreCase = true)) 1 else 0
+                    val liteCmp = aIsLite.compareTo(bIsLite)
+                    if (liteCmp != 0) liteCmp else a.compareTo(b)
+                }
+            }
+        }
+        return DEFAULT_GEMINI_MODELS
+    }
+
+    fun setCachedGeminiModels(models: List<String>) {
+        if (models.isNotEmpty()) {
+            ShizukuSettings.getPreferences().edit()
+                .putStringSet(KEY_COMPUT_GEMINI_MODELS_CACHE, models.toSet())
+                .apply()
+        }
     }
 
     fun isComputRecommandEnabled(): Boolean {

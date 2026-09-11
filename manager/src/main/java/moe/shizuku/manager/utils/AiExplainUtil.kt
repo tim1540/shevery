@@ -130,4 +130,60 @@ object AiExplainUtil {
             "Error: Failed to reach Gemini API: ${e.message ?: "Connection error."}"
         }
     }
+
+    suspend fun fetchAvailableFlashModels(apiKey: String): List<String> = withContext(Dispatchers.IO) {
+        if (apiKey.isBlank()) return@withContext emptyList()
+        try {
+            val url = URL("https://generativelanguage.googleapis.com/v1beta/models?key=$apiKey")
+            val conn = url.openConnection() as HttpURLConnection
+            conn.requestMethod = "GET"
+            conn.connectTimeout = 10000
+            conn.readTimeout = 10000
+
+            if (conn.responseCode == 200) {
+                val responseText = conn.inputStream.bufferedReader().use { it.readText() }
+                val json = JSONObject(responseText)
+                val modelsArray = json.optJSONArray("models") ?: return@withContext emptyList()
+                val flashModels = mutableListOf<String>()
+
+                for (i in 0 until modelsArray.length()) {
+                    val modelObj = modelsArray.optJSONObject(i) ?: continue
+                    val rawName = modelObj.optString("name", "")
+                    val modelId = rawName.removePrefix("models/")
+                    val supportedMethods = modelObj.optJSONArray("supportedGenerationMethods")
+                    var supportsGenerateContent = false
+                    if (supportedMethods != null) {
+                        for (j in 0 until supportedMethods.length()) {
+                            if (supportedMethods.optString(j) == "generateContent") {
+                                supportsGenerateContent = true
+                                break
+                            }
+                        }
+                    }
+                    if (!supportsGenerateContent) continue
+
+                    val lower = modelId.lowercase()
+                    if (lower.contains("flash") && !lower.contains("preview") && !lower.contains("exp")) {
+                        flashModels.add(modelId)
+                    }
+                }
+
+                flashModels.distinct().sortedWith { a, b ->
+                    val vA = Regex("""gemini-(\d+(?:\.\d+)?)""").find(a)?.groupValues?.get(1)?.toDoubleOrNull() ?: 0.0
+                    val vB = Regex("""gemini-(\d+(?:\.\d+)?)""").find(b)?.groupValues?.get(1)?.toDoubleOrNull() ?: 0.0
+                    val cmp = vB.compareTo(vA)
+                    if (cmp != 0) cmp else {
+                        val aIsLite = if (a.contains("lite", ignoreCase = true) || a.contains("8b", ignoreCase = true)) 1 else 0
+                        val bIsLite = if (b.contains("lite", ignoreCase = true) || b.contains("8b", ignoreCase = true)) 1 else 0
+                        val liteCmp = aIsLite.compareTo(bIsLite)
+                        if (liteCmp != 0) liteCmp else a.compareTo(b)
+                    }
+                }
+            } else {
+                emptyList()
+            }
+        } catch (_: Throwable) {
+            emptyList()
+        }
+    }
 }

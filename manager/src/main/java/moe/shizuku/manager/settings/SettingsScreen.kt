@@ -97,6 +97,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Lifecycle.State
 import android.widget.Toast
 import moe.shizuku.manager.utils.BackupRestoreUtil
+import moe.shizuku.manager.utils.AiExplainUtil
 
 
 @Composable
@@ -193,6 +194,9 @@ fun SettingsScreen() {
     }
     var computGeminiModel by remember {
         mutableStateOf(ModuleSettings.getComputGeminiModel())
+    }
+    var geminiModelOptions by remember {
+        mutableStateOf(ModuleSettings.getCachedGeminiModels())
     }
     var showApiKeyDialog by remember { mutableStateOf(false) }
     var showGeminiModelDialog by remember { mutableStateOf(false) }
@@ -866,6 +870,15 @@ fun SettingsScreen() {
                         ModuleSettings.setComputApiKey(tempKey)
                         computApiKey = tempKey
                         showApiKeyDialog = false
+                        if (tempKey.isNotBlank()) {
+                            scope.launch {
+                                val fetched = AiExplainUtil.fetchAvailableFlashModels(tempKey)
+                                if (fetched.isNotEmpty()) {
+                                    ModuleSettings.setCachedGeminiModels(fetched)
+                                    geminiModelOptions = fetched
+                                }
+                            }
+                        }
                     }
                 ) {
                     Text(stringResource(android.R.string.ok))
@@ -881,14 +894,31 @@ fun SettingsScreen() {
         )
     }
 
+    LaunchedEffect(showGeminiModelDialog) {
+        if (showGeminiModelDialog) {
+            val key = ModuleSettings.getComputApiKey()
+            if (key.isNotBlank()) {
+                val fetched = AiExplainUtil.fetchAvailableFlashModels(key)
+                if (fetched.isNotEmpty()) {
+                    ModuleSettings.setCachedGeminiModels(fetched)
+                    geminiModelOptions = fetched
+                }
+            }
+        }
+    }
+
     if (showGeminiModelDialog) {
-        val modelOptions = listOf("gemini-3.6-flash", "gemini-3.5-flash-lite")
+        val modelOptions = (listOf(computGeminiModel) + geminiModelOptions).distinct()
         ChoiceDialog(
             title = stringResource(R.string.comput_gemini_model_title),
             choices = modelOptions.map {
                 ChoiceOption(
                     title = it,
-                    summary = if (it == "gemini-3.6-flash") stringResource(R.string.comput_gemini_model_performance) else stringResource(R.string.comput_gemini_model_lightweight),
+                    summary = if (it.contains("lite", ignoreCase = true) || it.contains("8b", ignoreCase = true)) {
+                        stringResource(R.string.comput_gemini_model_lightweight)
+                    } else {
+                        stringResource(R.string.comput_gemini_model_performance)
+                    },
                     icon = R.drawable.ic_outline_info_24
                 )
             },
