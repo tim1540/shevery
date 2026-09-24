@@ -203,6 +203,7 @@ fun SettingsScreen() {
     var showMissingPermissionDialog by remember { mutableStateOf(false) }
     var recreateTick by remember { mutableIntStateOf(0) }
     var showUpdateSettings by remember { mutableStateOf(false) }
+    var showAutomationDialog by remember { mutableStateOf(false) }
 
     fun tcpModeNeedsRestart(enabled: Boolean): Boolean {
         val currentPort = EnvironmentUtils.getAdbTcpPort()
@@ -652,6 +653,17 @@ fun SettingsScreen() {
         }
 
         item {
+            SettingsGroup(title = stringResource(R.string.automation_settings_title)) {
+                SettingsRow(
+                    icon = R.drawable.ic_outline_play_arrow_24,
+                    title = stringResource(R.string.automation_tasker_macrodroid_title),
+                    summary = stringResource(R.string.automation_tasker_macrodroid_summary),
+                    onClick = { showAutomationDialog = true }
+                )
+            }
+        }
+
+        item {
             SettingsGroup(title = stringResource(R.string.settings_sections_title)) {
                 SectionHeader(stringResource(R.string.accessibility_manager_lab_group))
                 SettingsRow(
@@ -998,6 +1010,77 @@ fun SettingsScreen() {
             shape = MaterialTheme.shapes.extraLarge
         )
     }
+
+    if (showAutomationDialog) {
+        AutomationDialog(onDismiss = { showAutomationDialog = false })
+    }
+}
+
+@Composable
+private fun AutomationDialog(
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    val packageName = context.packageName
+
+    fun copy(text: String) {
+        ClipboardUtils.put(context, text)
+        Toast.makeText(context, R.string.automation_copied_to_clipboard, Toast.LENGTH_SHORT).show()
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.automation_dialog_title)) },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 520.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Text(
+                    text = stringResource(R.string.automation_dialog_description),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(16.dp))
+
+                SectionHeader(stringResource(R.string.automation_dialog_actions_header))
+                Spacer(Modifier.height(4.dp))
+
+                listOf(
+                    "com.hamondev.shevery.action.START_SERVER" to stringResource(R.string.automation_action_start),
+                    "com.hamondev.shevery.action.STOP_SERVER" to stringResource(R.string.automation_action_stop),
+                    "com.hamondev.shevery.action.RESTART_SERVER" to stringResource(R.string.automation_action_restart),
+                    "com.hamondev.shevery.action.TOGGLE_SERVER" to stringResource(R.string.automation_action_toggle),
+                ).forEach { (action, label) ->
+                    SettingsRow(
+                        icon = R.drawable.ic_outline_play_arrow_24,
+                        title = label,
+                        summary = action,
+                        onClick = { copy(action) }
+                    )
+                }
+
+                Spacer(Modifier.height(8.dp))
+                SectionHeader(stringResource(R.string.automation_dialog_target_header))
+                Spacer(Modifier.height(4.dp))
+                SettingsRow(
+                    icon = R.drawable.ic_baseline_link_24,
+                    title = stringResource(R.string.automation_package_label),
+                    summary = packageName,
+                    onClick = { copy(packageName) }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(android.R.string.ok))
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shape = MaterialTheme.shapes.extraLarge
+    )
 }
 
 @Composable
