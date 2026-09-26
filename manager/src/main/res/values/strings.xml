@@ -794,4 +794,5 @@ Wi-Fi is required for the first restart because Shevery must connect to the curr
     <string name="home_automation_connectors_active">Connectors Active</string>
     <string name="home_automation_connectors_active_desc">Incoming broadcast intents will be accepted.</string>
     <string name="home_automation_open_settings">Open Automation Settings</string>
+    <string name="device_admin_description">Allows Shevery to manage device settings, automate ADB, and delegate app administration.</string>
 </resources>
