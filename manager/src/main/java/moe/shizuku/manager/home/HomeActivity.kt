@@ -478,8 +478,17 @@ abstract class HomeActivity : AppActivity() {
                                     onRequestLocalNetworkPermission = {
                                         requestLocalNetworkPermission { permissionRefreshTick.intValue++ }
                                     },
-                                    onStartDhizuku = { startDhizukuMode() },
-                                    dhizukuEnabled = ModuleSettings.isDhizukuEnabled(),
+                                    onStartDhizuku = {
+                                        AuthManager.executeWithAuth(
+                                            activity = this@HomeActivity,
+                                            action = SecuritySettings.ProtectedAction.SERVER_TOGGLE,
+                                            title = getString(R.string.security_auth_prompt_title),
+                                            subtitle = getString(R.string.security_auth_prompt_server)
+                                        ) {
+                                            startDhizukuMode()
+                                        }
+                                    },
+                                    dhizukuEnabled = ModuleSettings.isDhizukuEnabled() && !DeviceOwnerManager.isDeviceOwner(this@HomeActivity),
                                     onOpenAutomationSettings = {
                                         settingsTargetSection = SettingsSection.AUTOMATION
                                         selectedTab = 3
