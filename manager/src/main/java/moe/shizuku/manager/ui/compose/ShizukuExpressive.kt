@@ -396,7 +396,9 @@ fun ShizukuScaffold(
         val navBarState = LocalFloatingNavBarVisible.current
         DisposableEffect(Unit) {
             navBarState.value = false
-            onDispose {}
+            onDispose {
+                navBarState.value = true
+            }
         }
     }
 

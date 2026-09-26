@@ -56,6 +56,7 @@ fun DeviceOwnerDelegationScreen(
         }
         onDispose {
             watcher.cancel()
+            navBarState.value = true
         }
     }
 

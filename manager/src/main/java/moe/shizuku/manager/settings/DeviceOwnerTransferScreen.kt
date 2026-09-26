@@ -58,6 +58,7 @@ fun DeviceOwnerTransferScreen(
         }
         onDispose {
             watcher.cancel()
+            navBarState.value = true
         }
     }
 

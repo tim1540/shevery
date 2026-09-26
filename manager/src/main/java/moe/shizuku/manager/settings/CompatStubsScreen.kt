@@ -48,6 +48,7 @@ fun CompatStubsScreen(
         }
         onDispose {
             watcher.cancel()
+            navBarState.value = true
         }
     }
 
