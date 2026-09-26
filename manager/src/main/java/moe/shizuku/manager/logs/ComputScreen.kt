@@ -202,13 +202,6 @@ fun ComputScreen(
         val isSubpage = showAiManager
         navBarState.value = !isSubpage
         onSubpageChange(isSubpage)
-        if (isSubpage) {
-            snapshotFlow { navBarState.value }.collect { visible ->
-                if (visible) {
-                    navBarState.value = false
-                }
-            }
-        }
     }
 
     DisposableEffect(Unit) {

@@ -126,12 +126,24 @@ private val MODULE_MIME_TYPES = arrayOf(
 fun ModulesScreen(
     onOpenWebUi: (String) -> Unit,
     listState: LazyListState = rememberLazyListState(),
-    modulesState: MutableState<List<AdbModule>>
+    modulesState: MutableState<List<AdbModule>>,
+    onSubpageChange: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     val view = LocalView.current
     val scope = rememberCoroutineScope()
     var showCatalog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(showCatalog) {
+        onSubpageChange(showCatalog)
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            onSubpageChange(false)
+        }
+    }
+
     var modules by modulesState
     var checkingUpdates by remember { mutableStateOf(false) }
     var updatingModuleId by remember { mutableStateOf<String?>(null) }

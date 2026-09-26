@@ -392,14 +392,6 @@ fun ShizukuScaffold(
     bottomBar: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
-    if (onNavigateUp != null) {
-        val navBarState = LocalFloatingNavBarVisible.current
-        DisposableEffect(Unit) {
-            navBarState.value = false
-            onDispose {}
-        }
-    }
-
     Scaffold(
         modifier = modifier,
         contentWindowInsets = WindowInsets(0.dp),

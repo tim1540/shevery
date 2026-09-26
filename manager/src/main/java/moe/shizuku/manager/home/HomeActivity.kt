@@ -101,6 +101,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -328,11 +331,38 @@ abstract class HomeActivity : AppActivity() {
                 }
             }
 
-            val floatingNavBarVisible = remember { mutableStateOf(true) }
+            var modulesIsSubpage by remember { mutableStateOf(false) }
+            var computIsSubpage by remember { mutableStateOf(false) }
+            var settingsIsSubpage by remember { mutableStateOf(false) }
 
-            LaunchedEffect(selectedTab) {
-                if (selectedTab != 3) {
-                    floatingNavBarVisible.value = true
+            val shouldShowNavBar = when (selectedTab) {
+                1 -> !modulesIsSubpage
+                2 -> !computIsSubpage
+                3 -> !settingsIsSubpage
+                else -> true
+            }
+
+            val floatingNavBarVisible = remember { mutableStateOf(shouldShowNavBar) }
+
+            LaunchedEffect(shouldShowNavBar) {
+                floatingNavBarVisible.value = shouldShowNavBar
+            }
+
+            val lifecycleOwner = LocalLifecycleOwner.current
+            DisposableEffect(lifecycleOwner) {
+                val observer = LifecycleEventObserver { _, event ->
+                    if (event == Lifecycle.Event.ON_RESUME) {
+                        floatingNavBarVisible.value = when (selectedTab) {
+                            1 -> !modulesIsSubpage
+                            2 -> !computIsSubpage
+                            3 -> !settingsIsSubpage
+                            else -> true
+                        }
+                    }
+                }
+                lifecycleOwner.lifecycle.addObserver(observer)
+                onDispose {
+                    lifecycleOwner.lifecycle.removeObserver(observer)
                 }
             }
 
@@ -463,13 +493,24 @@ abstract class HomeActivity : AppActivity() {
                                     )
                                 },
                                     listState = modulesListState,
-                                    modulesState = cachedModules
+                                    modulesState = cachedModules,
+                                    onSubpageChange = { isSubpage ->
+                                        modulesIsSubpage = isSubpage
+                                    }
                                 )
-                                2 -> moe.shizuku.manager.logs.ComputScreen(listState = computListState)
+                                2 -> moe.shizuku.manager.logs.ComputScreen(
+                                    listState = computListState,
+                                    onSubpageChange = { isSubpage ->
+                                        computIsSubpage = isSubpage
+                                    }
+                                )
                                 3 -> moe.shizuku.manager.settings.SettingsScreen(
                                     listState = settingsListState,
                                     targetSection = settingsTargetSection,
-                                    onTargetSectionConsumed = { settingsTargetSection = null }
+                                    onTargetSectionConsumed = { settingsTargetSection = null },
+                                    onSubpageChange = { isSubpage ->
+                                        settingsIsSubpage = isSubpage
+                                    }
                                 )
                             }
                         }

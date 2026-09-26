@@ -185,7 +185,8 @@ private sealed interface SettingsNav {
 fun SettingsScreen(
     listState: LazyListState = rememberLazyListState(),
     targetSection: SettingsSection? = null,
-    onTargetSectionConsumed: (() -> Unit)? = null
+    onTargetSectionConsumed: (() -> Unit)? = null,
+    onSubpageChange: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     val activity = context as? Activity
@@ -311,11 +312,25 @@ fun SettingsScreen(
             if (targetSection != null) SettingsNav.Section(targetSection) else SettingsNav.Hub
         )
     }
+    val navBarState = LocalFloatingNavBarVisible.current
 
     LaunchedEffect(targetSection) {
         if (targetSection != null) {
             nav = SettingsNav.Section(targetSection)
             onTargetSectionConsumed?.invoke()
+        }
+    }
+
+    LaunchedEffect(nav, showAiManager) {
+        val isSubpage = nav !is SettingsNav.Hub || showAiManager
+        navBarState.value = !isSubpage
+        onSubpageChange(isSubpage)
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            navBarState.value = true
+            onSubpageChange(false)
         }
     }
 
